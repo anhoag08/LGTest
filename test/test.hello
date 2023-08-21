@@ -1,0 +1,10 @@
+On "courses"
+    Do
+        - SendText username "21020607" & password "24M@mbaMentality"
+        - Click login
+    Response
+        - GoTo "courses"
+    Keyword
+        - username "id_username"
+        - password "id_pass"
+        - login "id_button"
