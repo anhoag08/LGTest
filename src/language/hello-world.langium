@@ -2,27 +2,43 @@ grammar HelloWorld
 
 entry Model: (stmts+=Stmt)*;
 
-// Statements
-Stmt:   On | Input;
-On:     'On' '"'url=URL'"';
-Input:  'Do' Block | 'Response' Block | 'Keyword' Block;
-Cmd:    Click | SendText | GoTo | Keyword;
+Stmt: On | Valid | Invalid | Locators | Values | Expr;
+Locators: 'LOCATOR:' LocBlock;
+Values: 'VALUE:' ValBlock;
+On: 'On'  value=URL ':';
+Valid: 'Valid:' Do;
+Invalid: 'Invalid:' Do;
+Do: 'Do:' name=MSTR Block;
 
-Click: 'Click' keyword=STRING;
-SendText: 'SendText' keyword=STRING '"'text=STRING'"' (('&' keyword=STRING '"'text=STRING'"')*)? (('|' keyword=STRING '"'text=STRING'"''"')*)?;
-GoTo: 'GoTo' '"'url=URL'"';
-Keyword: keyword=STRING '"'locator=LOCATOR'"';
-
-fragment Block: ('-' cmd=Cmd)*;
+Action: SendText | Click;
 
 
+SendText: '-' 'SendText' expr=Expr;
+Click: '-' 'Click' locator=MSTR;
+Loc: name=MSTR ':'  value=URL;
+Val: name=MSTR ':'  value=MSTR;
 
+Expr: Or;
 
+Or infers Expr:
+    And ({infer LogicExpr.e1=current} op='|' e2=And)*;
+And infers Expr:
+    Primary ({infer LogicExpr.e1=current} op='&' e2=Primary)*;
+
+Primary: Group | Lit;
+Lit: locator=MSTR value=MSTR;
+Group: '(' ge=Expr ')';
+
+fragment Block: body+=Action+;
+fragment LocBlock: body+=Loc+;
+fragment ValBlock: body+=Val+;
 
 // Terminals
-terminal STRING returns string: /[\w\@][\w\@]*/;
-terminal URL returns string:    /[\w|\.|\:|\/|\?|\=]+/;
-terminal LOCATOR returns string: /[\w\[\]\/][\w\[\]\/]*/;
+
+terminal URL:  /[\w]*:[\w\.\?\/\=\-\%\[\]\"\@\*]+/;
+// terminal MSLOC: /xpath:\/\/[\w\*\@\[\]\=\"]*/;
+terminal MSTR: /[\w\_\@]+/;
+
 hidden terminal WS:             /\s+/;
 hidden terminal ML_COMMENT:     /\/\*[\s\S]*?\*\//;
 hidden terminal SL_COMMENT:     /\/\/[^\n\r]*/;

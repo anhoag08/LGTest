@@ -1,5 +1,5 @@
 import { ValidationAcceptor, ValidationChecks } from 'langium';
-import { HelloWorldAstType, Keyword} from './generated/ast';
+import { HelloWorldAstType, Model} from './generated/ast';
 import type { HelloWorldServices } from './hello-world-module';
 
 /**
@@ -9,7 +9,7 @@ export function registerValidationChecks(services: HelloWorldServices) {
     const registry = services.validation.ValidationRegistry;
     const validator = services.validation.HelloWorldValidator;
     const checks: ValidationChecks<HelloWorldAstType> = {
-        Keyword: validator.checkUniqueKeywords
+        Model: validator.checkUniqueKeywords
     };
     registry.register(checks, validator);
 }
@@ -32,7 +32,7 @@ export class HelloWorldValidator {
     //     });
     // }
 
-    checkUniqueKeywords(keyword: Keyword, accept: ValidationAcceptor): void {
+    checkUniqueKeywords(model: Model, accept: ValidationAcceptor): void {
         
     }
     

@@ -1,0 +1,8 @@
+
+${username}   xpath://*[@id="userName"]
+${login}   xpath://*[@id="login"]
+${password}   xpath://*[@id="password"]
+${uservalid}   demouser
+${passvalid}   DemoPass@@123
+${userinvalid}   demo
+${passinvalid}   demo@@123

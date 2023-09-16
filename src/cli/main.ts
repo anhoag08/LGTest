@@ -7,20 +7,41 @@ import { extractAstNode } from './cli-util';
 import { generateCommands } from './generator';
 import { NodeFileSystem } from 'langium/node';
 import { extractDocument } from './cli-util';
+import { generateCommandsRes } from './res-generator';
+// import { generateCommandsRes } from './res-generator';
+// import { generateCommandsVar } from './var-generator';
 
-export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
+export const generateAction = async (sourceFileName: string, resourcesFileName : string,  opts: GenerateOptions): Promise<void> => {
+    const services = createHelloWorldServices(NodeFileSystem).HelloWorld;
+    const sourceModel = await extractAstNode<Model>(sourceFileName, services);
+    const resourceModel = await extractAstNode<Model>(resourcesFileName, services);
+    // now with 'generateCommands' instead
+    const generatedFilePath = generateCommands(sourceModel, resourceModel, sourceFileName, resourcesFileName, opts.destination);
+    console.log(chalk.green(`MiniLogo commands generated successfully: ${generatedFilePath}`));
+};
+
+export const generateResources = async (fileName: string, opts: GenerateOptions): Promise<void> => {
+
     const services = createHelloWorldServices(NodeFileSystem).HelloWorld;
     const model = await extractAstNode<Model>(fileName, services);
     // now with 'generateCommands' instead
-    const generatedFilePath = generateCommands(model, fileName, opts.destination);
-    console.log(chalk.green(`MiniLogo commands generated successfully: ${generatedFilePath}`));
+    const generatedFilePath = generateCommandsRes(model, fileName, opts.destination);
+    console.log(chalk.green(`Resources commands generated successfully: ${generatedFilePath}`));
 };
+
+// export const generateVariables = async (fileName: string, opts: GenerateOptions): Promise<void> => {
+//     const services = createHelloWorldServices(NodeFileSystem).HelloWorld;
+//     const model = await extractAstNode<Model>(fileName, services);
+//     // now with 'generateCommands' instead
+//     const generatedFilePath = generateCommandsVar(model, fileName, opts.destination);
+//     console.log(chalk.green(`Variables commands generated successfully: ${generatedFilePath}`));
+// };
 
 export type GenerateOptions = {
     destination?: string;
 }
 
-export const parseAndValidate = async (fileName: string): Promise<void> => {
+export const parseAndValidate = async (fileName: string, resourcesFileName : string): Promise<void> => {
     // retrieve the services for our language
     const services = createHelloWorldServices(NodeFileSystem).HelloWorld;
     // extract a document for our program
@@ -47,12 +68,26 @@ export default function(): void {
     const fileExtensions = HelloWorldLanguageMetaData.fileExtensions.join(', ');
     program
     .command('generate')
+    .argument('<file>',`source file (possible file extensions: ${fileExtensions})`)
+    .argument('<file>',`source file (possible file extensions: ${fileExtensions})`)
+    .option('-d, --destination <dir>', 'destination directory of generating')
+    // new description
+    .description('generates DSL')
+    .action(generateAction);
+    program
+    .command('resource')
     .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
     .option('-d, --destination <dir>', 'destination directory of generating')
     // new description
-    .description('generates MiniLogo commands that can be used as simple drawing instructions')
-    .action(generateAction);
-
+    .description('generates resources')
+    .action(generateResources);
+    // program
+    // .command('variable')
+    // .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
+    // .option('-d, --destination <dir>', 'destination directory of generating')
+    // // new description
+    // .description('generates variables')
+    // .action(generateVariables);
     program
         .command('parseAndValidate')
         .argument('<file>', 'Source file to parse & validate (ending in ${fileExtensions})')
