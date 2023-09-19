@@ -3,3 +3,10 @@ LOCATOR:
    password:
    login:
 VALUE:
+   And(uservalid, logininvalid): (a1, b1), (a2, b2), (a3, b3)
+   And(passvalid, loginvalid):
+   And(passvalid, logininvalid):
+   And(uservalid, loginvalid):
+   passvalid:
+   userinvalid:
+   passinvalid:
