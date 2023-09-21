@@ -9,6 +9,7 @@ Library    Telnet
 ${username}   xpath://*[@id="userName"]
 ${login}   xpath://*[@id="login"]
 ${password}   xpath://*[@id="password"]
+${logininvalid}   b3
 ${uservalid}   demouser
 ${passvalid}   DemoPass@@123
 ${userinvalid}   demo
@@ -19,16 +20,15 @@ ${passinvalid}   demo@@123
 Test1
    Open Browser   https://demoqa.com/login   Edge
    Maximize Browser Window
-   Input Text   ${username}   ${uservalid}
-   Input Text   ${password}   ${passvalid}
+
    Click Element   ${login}
 
 
 Test2
    Open Browser   https://demoqa.com/login   Edge
    Maximize Browser Window
-   Input Text   ${username}   ${userinvalid}
-   Input Text   ${password}   ${passinvalid}
+
+
    Click Element   ${login}
 
 

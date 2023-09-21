@@ -16,7 +16,11 @@ Action: SendText | Click;
 SendText: '-' 'SendText' expr=Expr;
 Click: '-' 'Click' locator=MSTR;
 Loc: name=MSTR ':'  value=URL;
-Val: name=MSTR ':'  value=MSTR;
+Val: SingleVal | Bundle | AndTuple;
+
+SingleVal: name=MSTR ':' value=MSTR;
+Bundle: name=MSTR ':' '(' value=MSTR (',' value=MSTR)* ')';
+AndTuple: 'And(' name=MSTR (',' name=MSTR)* '):' '(' value=MSTR (',' value=MSTR)* ')' (',' '(' value=MSTR (',' value=MSTR)* ')')*;
 
 Expr: Or;
 

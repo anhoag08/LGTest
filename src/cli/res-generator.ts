@@ -117,15 +117,18 @@ function generateResourcesExpr(e: Expr, isGe: boolean): string {
 function parseExpression(inputString: string): string[] {
   let inputStrings = inputString.split("Or(");
   if (inputStrings[1] !== undefined) {
-    inputStrings[1] = inputStrings[1].slice(0, inputStrings[1].length - 3);
-    const lines = inputStrings[1].split("), ");
-    for (let line in lines) {
-      if (lines[line][lines[line].length - 1] !== ")") {
-        lines[line] += ")";
+    var expr = inputStrings[1];
+    var singleStrings = expr.match(/(And\(\w+(\, \w+)\))|\w+/gm);
+    if(singleStrings !== null) {
+      for (var i in singleStrings) {
+        singleStrings[i] = '   ' + singleStrings[i] + ':'
       }
-      lines[line] = "   " + lines[line] + ":";
     }
-    return lines;
+    if(singleStrings !== null) {
+      return singleStrings;
+    } else {
+      return [''];
+    }
   } else {
     return ["   " + inputStrings[0].trim() + ":"];
   }

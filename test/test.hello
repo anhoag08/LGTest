@@ -1,8 +1,7 @@
 On https://demoqa.com/login:
     Valid:
         Do: Test1
-        - SendText (username uservalid | password passvalid) & (login loginvalid | login logininvalid)
-        - SendText password passvalid
+        - SendText (u1 v1 | u2 v2) & u3 v3
         - Click login
     Invalid:
         Do: Test2
