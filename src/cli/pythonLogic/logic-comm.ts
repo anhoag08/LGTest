@@ -1,7 +1,7 @@
 // executePython.ts
 import { spawnSync } from 'child_process';
 
-const pythonFilePath = './src/cli/LogicParse.py'; // Replace with the path to your Python script
+const pythonFilePath = './src/cli/pythonLogic/LogicParse.py'; // Replace with the path to your Python script
 
 export function parseLogicExpression(expr: string): string {
   const argu = [expr]; // Replace with the arguments you want to pass

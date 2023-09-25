@@ -1,12 +1,13 @@
 LOCATOR:
-   u1:
-   u2:
-   u3:
-   login:
-   username:
-   password:
+   u1: xpath://*[@id="userName"]
+   u2: xpath://*[@id="userName"]
+   u3: xpath://*[@id="userName"]
+   login: xpath://*[@id="userName"]
+   username: xpath://*[@id="userName"]
+   password: xpath://*[@id="userName"]
 VALUE:
-   And(v2, v3):
-   And(v1, v3):
-   userinvalid:
-   passinvalid:
+   And(v2, v3): (u11, u21), (u12, u22)
+   And(v1, v3): (u12, u22)
+   userinvalid: place
+   passinvalid: place
+   values: (v1, v2, v3, v4)

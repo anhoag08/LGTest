@@ -1,7 +1,7 @@
 On https://demoqa.com/login:
     Valid:
         Do: Test1
-        - SendText (u1 v1 | u2 v2) & u3 v3
+        - SendText (u1 v1 | u2 v2) & (u3 v3 | u2 v2)
         - Click login
     Invalid:
         Do: Test2

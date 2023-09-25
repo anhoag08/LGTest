@@ -13,7 +13,7 @@ import {
 } from "../language/generated/ast";
 // import { Model, isDo, Action} from '../language/generated/ast';
 import { extractDestinationAndName } from "./cli-util";
-import { parseLogicExpression } from "./logic-comm";
+import { parseLogicExpression } from "./pythonLogic/logic-comm";
 
 // import { exec } from 'child_process';
 
@@ -118,7 +118,7 @@ function parseExpression(inputString: string): string[] {
   let inputStrings = inputString.split("Or(");
   if (inputStrings[1] !== undefined) {
     var expr = inputStrings[1];
-    var singleStrings = expr.match(/(And\(\w+(\, \w+)\))|\w+/gm);
+    var singleStrings = expr.match(/(And\(\w+(\, \w+)*\))|\w+/gm);
     if(singleStrings !== null) {
       for (var i in singleStrings) {
         singleStrings[i] = '   ' + singleStrings[i] + ':'
