@@ -83,57 +83,75 @@ function generateStatements(stmts: Stmt[]): string[] {
     .filter((e) => e !== undefined) as string[];
 }
 
-function generateActions(actions: Action[]): string[] {
+function generateActions(actions: Action[], testName: string): string[] {
   var fullTest: string[] = [];
+  var testIndex = 0;
   temp.length = 0;
   truthTable.length = 0;
   for (const action of actions) {
     evalAction(action, temp, truthTable);
   }
+  var isComplexExpr = 0;
   for (const array of truthTable) {
     for (const dict of array) {
-      var tempCombo = [...temp];
       for (const key in dict) {
         if (dict.hasOwnProperty(key)) {
-          if (dict[key] == 1) {
-            console.log(key);
-            var lines = key.match(/[^And(), ]+/gm);
-            if (lines != null) {
-              for (const line of lines) {
-                changTemp(line, tempCombo, true);
+          if (key.includes("And")) {
+            isComplexExpr = 1;
+            break;
+          }
+        }
+      }
+    }
+  }
+  if (isComplexExpr == 1) {
+    for (const array of truthTable) {
+      for (const dict of array) {
+        var testTemplate = [...temp];
+        testIndex++;
+        for (const key in dict) {
+          if (dict.hasOwnProperty(key)) {
+            if (dict[key] == 1) {
+              if (key.match(/And\(/gm) != null) {
+                testTemplate = AndExprSubtitution(
+                  key,
+                  testTemplate,
+                  testName + "-" + testIndex
+                );
+              } else {
+                changeTemp(key, testTemplate, true);
               }
-            }
-          } else {
-            console.log(key);
-            var lines = key.match(/[^And(), ]+/gm);
-            if (lines != null) {
-              for (const line of lines) {
-                changTemp(line, tempCombo, false);
+            } else {
+              var lines = key.match(/[^And(), ]+/gm);
+              if (lines != null) {
+                for (const line of lines) {
+                  changeTemp(line, testTemplate, false);
+                }
               }
             }
           }
         }
+        fullTest = fullTest.concat(testTemplate);
       }
-      fullTest = fullTest.concat(tempCombo);
-      console.log(tempCombo);
-      console.log(fullTest);
     }
+  } else {
+    fullTest = [testName + openBrowser].concat([...temp]);
   }
   return fullTest;
 }
 
-// function findVar(key: string): string {
-//   var foundLine = "";
-//   for (const line of varStatements) {
-//     if (line.match("@{" + key + "}") !== null) {
-//       foundLine = line;
-//     }
-//   }
-//   return foundLine;
-// }
+function findVar(key: string): string {
+  var foundLine = "";
+  for (const line of varStatements) {
+    if (line.includes(key)) {
+      foundLine = line;
+    }
+  }
+  return foundLine;
+}
 
-function changTemp(key: string, actualTest: string[], isTrue: boolean) {
-  if(isTrue) {
+function changeTemp(key: string, actualTest: string[], isTrue: boolean) {
+  if (isTrue) {
     for (var i in actualTest) {
       if (actualTest[i].match(key) != null) {
         const regex = RegExp("\\${" + `${key}` + "}", "g");
@@ -150,6 +168,47 @@ function changTemp(key: string, actualTest: string[], isTrue: boolean) {
   }
 }
 
+function AndExprSubtitution(
+  key: string,
+  testTemplate: string[],
+  testName: string
+) {
+  const tempTemplate = [...testTemplate];
+  var tempTemplate1 = [...tempTemplate];
+  testTemplate.length = 0;
+  var tempKey = key.replace(/And\(|\)/gm, "");
+  var lines = tempKey.match(/\w+/gm);
+  var valueArray: string[][] = [];
+  if (lines != null) {
+    for (const line of lines) {
+      const initial = "@{" + line + "-" + key + "}";
+      const foundVars = findVar(initial).replace(initial, "").match(/\w+/g);
+      if (foundVars != null) {
+        valueArray.push(foundVars);
+      }
+    }
+    var index = 0;
+    while (index < valueArray[0].length) {
+      for (const line of lines) {
+        for (const testLine in tempTemplate1) {
+          if (tempTemplate1[testLine].includes(line)) {
+            tempTemplate1[testLine] = tempTemplate1[testLine].replace(
+              "${" + line + "}",
+              "${" + line + "-" + key + "}[" + index + "]"
+            );
+          }
+        }
+      }
+      testTemplate = testTemplate.concat(
+        [testName + "-" + (index + 1) + openBrowser].concat(tempTemplate1)
+      );
+      tempTemplate1 = [...tempTemplate];
+      index++;
+    }
+  }
+  return testTemplate;
+}
+
 function evalStmt(stmt: Stmt): (Object | undefined)[] {
   if (isOn(stmt)) {
     openBrowser = [
@@ -161,10 +220,8 @@ function evalStmt(stmt: Stmt): (Object | undefined)[] {
     return ["***Test Cases***"];
   } else if (isDo(stmt)) {
     const actions = stmt.body;
-    return [`${stmt.name}` + openBrowser]
-      .concat(generateActions(actions))
-      .concat("\n");
-    // console.log(generateActions(actions));
+    var testName = stmt.name;
+    return generateActions(actions, testName); // console.log(generateActions(actions));
     // return generateActions(actions);
   } else {
     throw new Error(
@@ -187,23 +244,19 @@ function evalAction(
     var valueOnly = generateResourcesExpr(expr, false);
     valueOnly = parseLogicExpression(valueOnly);
     var lines = ExprToComponent(valueOnly);
-    if (lines.length > 1) {
-      var refTable: Record<string, string> = {};
-      for (var line of lines) {
-        if (line.match(/(And\(\w+(\, \w+)*\))/gm) !== null) {
-          refTable[line.replace(/\(|\,|\ |\)/gm, "")] = line;
-          valueOnly = valueOnly.replace(
-            line,
-            line.replace(/\(|\,|\ |\)/gm, "")
-          );
-        }
+
+    var refTable: Record<string, string> = {};
+    for (var line of lines) {
+      if (line.match(/(And\(\w+(\, \w+)*\))/gm) !== null) {
+        refTable[line.replace(/\(|\,|\ |\)/gm, "")] = line;
+        valueOnly = valueOnly.replace(line, line.replace(/\(|\,|\ |\)/gm, ""));
       }
-      var dicts = TruthTable(valueOnly, refTable);
-      if (typeof dicts == "object") {
-        truthTable.push(dicts);
-      } else {
-        throw new Error("Unrecognized Expr Truth Table");
-      }
+    }
+    var dicts = TruthTable(valueOnly, refTable);
+    if (typeof dicts == "object") {
+      truthTable.push(dicts);
+    } else {
+      throw new Error("Unrecognized Expr Truth Table");
     }
   } else {
     throw new Error(
