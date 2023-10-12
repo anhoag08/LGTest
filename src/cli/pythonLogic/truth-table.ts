@@ -3,7 +3,7 @@ import { spawnSync } from "child_process";
 
 const pythonFilePath = "./src/cli/pythonLogic/TruthTable.py"; // Replace with the path to your Python script
 
-export function TruthTable(expr: string, refTable: Record<string, string>): string | Record<string, number>[] {
+export function TruthTable(expr: string): string | Record<string, number>[] {
   const argu = [expr]; // Replace with the arguments you want to pass
 
   const pythonProcess = spawnSync("python", [pythonFilePath, ...argu]);
@@ -16,12 +16,7 @@ export function TruthTable(expr: string, refTable: Record<string, string>): stri
       console.error("Python script error:", pythonError);
     }
     pythonOutput = pythonOutput.replace(/(\w+)/g, '"$1"');
-    for (const key in refTable) {
-      if(refTable.hasOwnProperty(key)) {
-        const regex = new RegExp(`${key}`, 'g');
-        pythonOutput = pythonOutput.replace(regex, refTable[key]);
-      }
-    }
+
     let arrayOfDicts: Record<string, number>[];
     try {
       arrayOfDicts = JSON.parse(pythonOutput, (key, value) => {

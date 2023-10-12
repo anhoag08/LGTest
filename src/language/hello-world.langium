@@ -2,12 +2,12 @@ grammar HelloWorld
 
 entry Model: (stmts+=Stmt)*;
 
-Stmt: On | Valid | Invalid | Locators | Values | Expr;
+Stmt: On | Valid | Invalid | Locators | Values;
 Locators: 'LOCATOR:' LocBlock;
 Values: 'VALUE:' ValBlock;
 On: 'On'  value=URL ':';
-Valid: 'Valid:' Do;
-Invalid: 'Invalid:' Do;
+Valid: 'Valid:' body+=Do+;
+Invalid: 'Invalid:' body+=Do+;
 Do: 'Do:' name=MSTR Block;
 
 Action: SendText | Click;
@@ -16,11 +16,11 @@ Action: SendText | Click;
 SendText: '-' 'SendText' expr=Expr;
 Click: '-' 'Click' locator=MSTR;
 Loc: name=MSTR ':'  value=URL;
-Val: SingleVal | Bundle | AndTuple;
+Val: SingleVal | Bundle | Tuple;
 
 SingleVal: name=MSTR ':' value=MSTR;
 Bundle: name=MSTR ':' '(' values+=MSTR (',' values+=MSTR)* ')';
-AndTuple: 'And(' names+=MSTR (',' names+=MSTR)* '):' '(' values+=MSTR (',' values+=MSTR)* ')' (',' '(' values+=MSTR (',' values+=MSTR)* ')')*;
+Tuple: '[' names+=MSTR (',' names+=MSTR)* ']:' '(' values+=MSTR (',' values+=MSTR)* ')' (',' '(' values+=MSTR (',' values+=MSTR)* ')')*;
 
 Expr: Or;
 

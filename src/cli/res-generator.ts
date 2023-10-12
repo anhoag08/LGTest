@@ -3,17 +3,19 @@ import fs from "fs";
 import {
   Model,
   isClick,
-  isDo,
   isSendText,
   Action,
   Expr,
   isLogicExpr,
   isLit,
   isGroup,
+  isValid,
+  isInvalid,
+  Do,
 } from "../language/generated/ast";
 // import { Model, isDo, Action} from '../language/generated/ast';
 import { extractDestinationAndName } from "./cli-util";
-import { parseLogicExpression } from "./pythonLogic/logic-comm";
+import { TruthTable } from "./pythonLogic/truth-table";
 
 // import { exec } from 'child_process';
 
@@ -59,9 +61,17 @@ function generateResourcesStatement(statements: Object[]): void {
   // Iterate through the array of objects and format them as needed
   for (const statement of statements) {
     // Customize this part based on the structure of your statement objects
-    if (isDo(statement)) {
-      generateResourcesAction(statement.body);
+    if (isValid(statement)) {
+      generateResourcesDo(statement.body);
+    } else if (isInvalid(statement)) {
+      generateResourcesDo(statement.body);
     }
+  }
+}
+
+function generateResourcesDo(body: Do[]): void {
+  for (const test of body) {
+    generateResourcesAction(test.body);
   }
 }
 
@@ -76,12 +86,36 @@ function generateResourcesAction(actions: Action[]): void {
       }
     } else if (isSendText(action)) {
       let temp = generateResourcesExpr(action.expr, false);
-      let expr = parseLogicExpression(temp);
-      let lines = parseExpression(expr);
-      for (const line in lines) {
-        if (!values.includes(line)) {
-          values.push(lines[line]);
+      let refTable = TruthTable(temp);
+      if (typeof refTable === "string") {
+        console.error(refTable);
+      } else {
+        generateResourcesValue(refTable);
+      }
+    }
+  }
+}
+
+function generateResourcesValue(refTable: Record<string, number>[]) {
+  for (const dict of refTable) {
+    var temp = "";
+    for (const key in dict) {
+      if (dict.hasOwnProperty(key)) {
+        if (dict[key] == 1) {
+          temp += key + ", ";
         }
+      }
+    }
+    temp = temp.slice(0, temp.length - 2);
+    if (temp.match(" ") == null) {
+      temp = "   " + temp + ":";
+      if (!values.includes(temp)) {
+        values.push(temp);
+      }
+    } else {
+      temp = "   " + "[" + temp + "]:";
+      if (!values.includes(temp)) {
+        values.push(temp);
       }
     }
   }
@@ -111,25 +145,5 @@ function generateResourcesExpr(e: Expr, isGe: boolean): string {
     throw new Error(
       "Unrecognized Expr encountered: " + (e as any)?.$type ?? "Unknown Type"
     );
-  }
-}
-
-function parseExpression(inputString: string): string[] {
-  let inputStrings = inputString.split("Or(");
-  if (inputStrings[1] !== undefined) {
-    var expr = inputStrings[1];
-    var singleStrings = expr.match(/(And\(\w+(\, \w+)*\))|\w+/gm);
-    if(singleStrings !== null) {
-      for (var i in singleStrings) {
-        singleStrings[i] = '   ' + singleStrings[i] + ':'
-      }
-    }
-    if(singleStrings !== null) {
-      return singleStrings;
-    } else {
-      return [''];
-    }
-  } else {
-    return ["   " + inputStrings[0].trim() + ":"];
   }
 }

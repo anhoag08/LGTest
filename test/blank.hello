@@ -1,11 +1,14 @@
 On https://demoqa.com/login:
     Valid:
         Do: Test1
-        - SendText username uservalid 
-        - SendText password passvalid
-        - Click login
-    Invalid:
+            - SendText (u1 v1 | u2 v2) & (u3 v3 | u4 v4)
+            - SendText (u5 v5 & u6 v6)
+            - Click login
+
         Do: Test2
-        - SendText username userinvalid
-        - SendText password passinvalid
-        - Click login
+            - SendText u5 v5 | u6 v6
+            - Click login
+
+        Do: Test3
+            - SendText u7 v7
+            - Click login

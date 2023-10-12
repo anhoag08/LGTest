@@ -2,26 +2,25 @@ import path from "path";
 import fs from "fs";
 // import { Model, Stmt, isClick, isDo, isOn, isSendText } from '../language/generated/ast';
 import {
+  Action,
+  Do,
+  Expr,
   Model,
   Stmt,
   isClick,
-  isDo,
-  isOn,
-  isSendText,
-  Action,
-  Expr,
   isGroup,
+  isInvalid,
   isLit,
   isLogicExpr,
+  isOn,
+  isSendText,
+  isValid,
 } from "../language/generated/ast";
 import { extractDestinationAndName } from "./cli-util";
 import { generateCommandsVar } from "./var-generator";
-import { parseLogicExpression } from "./pythonLogic/logic-comm";
 import { TruthTable } from "./pythonLogic/truth-table";
+import e from "express";
 
-var temp: string[] = [];
-var truthTable: Record<string, number>[][] = [];
-let openBrowser = [""];
 let SettingsHeader = [
   "***Settings***\n" +
     "Library    SeleniumLibrary\n" +
@@ -30,7 +29,8 @@ let SettingsHeader = [
     "Library    Telnet\n",
 ];
 let VarHeader = ["***Variables***"];
-let varStatements: any[];
+let TestHeader = ["***Test Cases***"];
+let openBrowser: string;
 
 export function generateCommands(
   sourceModel: Model,
@@ -49,12 +49,12 @@ export function generateCommands(
     fs.mkdirSync(sourceData.destination, { recursive: true });
   }
 
-  varStatements = VarHeader.concat(
+  VarHeader = VarHeader.concat(
     generateCommandsVar(resourceModel, resourcesFilePath)
   ).concat("\n");
 
   const statements = SettingsHeader.concat(
-    varStatements.concat(generateStatements(sourceModel.stmts))
+    VarHeader.concat(generateStatements(sourceModel.stmts))
   );
 
   // Convert the array of objects to a custom formatted string
@@ -78,221 +78,239 @@ function formatStatements(statements: Object[]): string {
 }
 
 function generateStatements(stmts: Stmt[]): string[] {
-  return stmts
-    .flatMap((s) => evalStmt(s))
-    .filter((e) => e !== undefined) as string[];
-}
-
-function generateActions(actions: Action[], testName: string): string[] {
-  var fullTest: string[] = [];
-  var testIndex = 0;
-  temp.length = 0;
-  truthTable.length = 0;
-  for (const action of actions) {
-    evalAction(action, temp, truthTable);
-  }
-  var isComplexExpr = 0;
-  for (const array of truthTable) {
-    for (const dict of array) {
-      for (const key in dict) {
-        if (dict.hasOwnProperty(key)) {
-          if (key.includes("And")) {
-            isComplexExpr = 1;
-            break;
-          }
-        }
-      }
+  var tempStmt: string[] = [];
+  tempStmt = tempStmt.concat(TestHeader);
+  for (const stmt of stmts) {
+    if (isOn(stmt)) {
+      openBrowser = "   Open Browser   " + stmt.value + "   Edge";
+    } else if (isValid(stmt)) {
+      tempStmt = tempStmt.concat(generateTestCase(stmt.body, true));
+    } else if (isInvalid(stmt)) {
+      tempStmt = tempStmt.concat(generateTestCase(stmt.body, false));
     }
   }
-  if (isComplexExpr == 1) {
-    for (const array of truthTable) {
-      for (const dict of array) {
-        var testTemplate = [...temp];
-        testIndex++;
-        for (const key in dict) {
-          if (dict.hasOwnProperty(key)) {
-            if (dict[key] == 1) {
-              if (key.match(/And\(/gm) != null) {
-                testTemplate = AndExprSubtitution(
-                  key,
-                  testTemplate,
-                  testName + "-" + testIndex
-                );
-              } else {
-                changeTemp(key, testTemplate, true);
+  return tempStmt;
+}
+
+function generateTestCase(body: Do[], isValidTest: boolean): string[] {
+  var TestCase: string[] = [];
+  if (isValidTest) {
+    for (const test of body) {
+      var testName = "Valid-" + test.name;
+      var template = generateTestTemplate(test.body, testName);
+      TestCase = TestCase.concat(
+        generateComboFromTemplate(test.body, template)
+      );
+    }
+    return TestCase;
+  } else {
+    for (const test of body) {
+      var testName = "Invalid-" + test.name;
+      TestCase = TestCase.concat(generateTestTemplate(test.body, testName));
+    }
+    return TestCase;
+  }
+}
+
+function generateComboFromTemplate(
+  actions: Action[],
+  template: string[]
+): string[] {
+  var testCombo: string[] = [];
+  var actionTemp = [...template];
+  for (const action of actions) {
+    if (isSendText(action)) {
+      var newTemp:string[] = [];
+      var expr = exprToString(action.expr, false);
+      var refTable = TruthTable(expr);
+      if (typeof refTable === "string") {
+        console.error(refTable);
+      } else {
+        var generalHeader = "";
+        for (const key in refTable[0]) {
+          if (refTable[0].hasOwnProperty(key)) {
+            generalHeader += key + ", ";
+          }
+        }
+        generalHeader =
+          "[" + generalHeader.slice(0, generalHeader.length - 2) + "]";
+        if(generalHeader.match(/, /g) != null) {
+          for(const dict of refTable) {
+            var dictTemp = [...actionTemp];
+            var header = ""
+            var size = 0;
+            for(const key in dict) {
+              if(dict[key] == 1) {
+                header += key + ', '
+              }
+            }
+            header = '[' +  header.slice(0, header.length - 2) + ']';
+            if(header.match(/, /g) != null) {
+              for(const line of VarHeader) {
+                if(line.includes(header)) {
+                  var ws = line.match(/   /g)?.length;
+                  if(ws != undefined) {
+                    size = ws;
+                    break;
+                  }
+                }
+              }
+              for(var i in dictTemp) {
+                if(dictTemp[i].includes(generalHeader)) {
+                  dictTemp[i] = dictTemp[i].replace(generalHeader, header)
+                }
+              }
+              for(var n=0; n<size; n++) {
+                var valTemp = [...dictTemp]
+                for(const key in dict) {
+                  if(dict[key] == 1) {
+                    for(var i in valTemp) {
+                      if(valTemp[i].includes(key + '-' + header)) {
+                        valTemp[i] += '[' + n + ']'
+                      }
+                    }
+                  } else {
+                    for(var i in valTemp) {
+                      if(valTemp[i].includes(key + '-' + header)) {
+                        valTemp[i] = valTemp[i].replace(key + '-' + header, 'EMPTY')
+                      }
+                    }
+                  }
+                }
+                newTemp = newTemp.concat(valTemp);
               }
             } else {
-              var lines = key.match(/[^And(), ]+/gm);
-              if (lines != null) {
-                for (const line of lines) {
-                  changeTemp(line, testTemplate, false);
+              header = header.slice(1, header.length-1)
+              for(var line of VarHeader) {
+                if(line.includes('@{' + header + '}')) {
+                  var ws = line.match(/   /g)?.length;
+                  if(ws != undefined) {
+                    size = ws;
+                    break;
+                  }
                 }
+              }
+              for(var n=0; n<size; n++) {
+                var valTemp = [...dictTemp]
+                for(var i in valTemp) {
+                  for(const key in dict) {
+                    if(dict[key] == 1) {
+                      if(valTemp[i].includes(key + '-' + generalHeader)) {
+                        valTemp[i] = valTemp[i].replace(key + '-' + generalHeader, key) + '[' + n + ']';
+                      }
+                    } else {
+                      if(valTemp[i].includes(key + '-' + generalHeader)) {
+                        valTemp[i] = valTemp[i].replace(key + '-' + generalHeader, 'EMPTY');
+                      }
+                    }
+                  }
+                }
+                newTemp = newTemp.concat(valTemp);
               }
             }
           }
-        }
-        fullTest = fullTest.concat(testTemplate);
-      }
-    }
-  } else {
-    fullTest = [testName + openBrowser].concat([...temp]);
-  }
-  return fullTest;
-}
-
-function findVar(key: string): string {
-  var foundLine = "";
-  for (const line of varStatements) {
-    if (line.includes(key)) {
-      foundLine = line;
-    }
-  }
-  return foundLine;
-}
-
-function changeTemp(key: string, actualTest: string[], isTrue: boolean) {
-  if (isTrue) {
-    for (var i in actualTest) {
-      if (actualTest[i].match(key) != null) {
-        const regex = RegExp("\\${" + `${key}` + "}", "g");
-        actualTest[i] = actualTest[i].replace(regex, "${" + `${key}` + "}[0]");
-      }
-    }
-  } else {
-    for (var i in actualTest) {
-      if (actualTest[i].match(key) != null) {
-        const regex = RegExp("\\${" + `${key}` + "}", "g");
-        actualTest[i] = actualTest[i].replace(regex, "${EMPTY}");
-      }
-    }
-  }
-}
-
-function AndExprSubtitution(
-  key: string,
-  testTemplate: string[],
-  testName: string
-) {
-  const tempTemplate = [...testTemplate];
-  var tempTemplate1 = [...tempTemplate];
-  testTemplate.length = 0;
-  var tempKey = key.replace(/And\(|\)/gm, "");
-  var lines = tempKey.match(/\w+/gm);
-  var valueArray: string[][] = [];
-  if (lines != null) {
-    for (const line of lines) {
-      const initial = "@{" + line + "-" + key + "}";
-      const foundVars = findVar(initial).replace(initial, "").match(/\w+/g);
-      if (foundVars != null) {
-        valueArray.push(foundVars);
-      }
-    }
-    var index = 0;
-    while (index < valueArray[0].length) {
-      for (const line of lines) {
-        for (const testLine in tempTemplate1) {
-          if (tempTemplate1[testLine].includes(line)) {
-            tempTemplate1[testLine] = tempTemplate1[testLine].replace(
-              "${" + line + "}",
-              "${" + line + "-" + key + "}[" + index + "]"
-            );
+        } else {
+          var size = 0;
+          var dictTemp = [...actionTemp];
+          generalHeader = generalHeader.slice(1, generalHeader.length-1);
+          for(const line of VarHeader) {
+            if(line.includes('@{' + generalHeader + '}')) {
+              var ws = line.match(/   /g)?.length;
+              if(ws != undefined) {
+                size = ws;
+                break;
+              }
+            }
+          }
+          for(var n=0; n<size; n++) {
+            var valTemp = [...dictTemp];
+            for(var i in valTemp) {
+              if(valTemp[i].includes('${' + generalHeader + '}') && !valTemp[i].includes('[' || ']')) {
+                valTemp[i] += '[' + n + ']';
+              }
+            }
+            newTemp = newTemp.concat(valTemp);
           }
         }
       }
-      testTemplate = testTemplate.concat(
-        [testName + "-" + (index + 1) + openBrowser].concat(tempTemplate1)
-      );
-      tempTemplate1 = [...tempTemplate];
-      index++;
+      actionTemp = [...newTemp];
     }
   }
-  return testTemplate;
+  testCombo=[...actionTemp];
+  return testCombo;
 }
 
-function evalStmt(stmt: Stmt): (Object | undefined)[] {
-  if (isOn(stmt)) {
-    openBrowser = [
-      "\n   Open Browser   " +
-        stmt.value +
-        "   Edge\n" +
-        "   Maximize Browser Window",
-    ];
-    return ["***Test Cases***"];
-  } else if (isDo(stmt)) {
-    const actions = stmt.body;
-    var testName = stmt.name;
-    return generateActions(actions, testName); // console.log(generateActions(actions));
-    // return generateActions(actions);
-  } else {
-    throw new Error(
-      "Unrecognized Statement encountered: " + (stmt as any)?.$type ??
-        "Unknown Type"
-    );
+function generateTestTemplate(actions: Action[], testName: string): string[] {
+  var template = [testName, openBrowser];
+  for (const action of actions) {
+    if (isClick(action)) {
+      template.push("   Click Element   ${" + action.locator + "}");
+    } else if (isSendText(action)) {
+      template = template.concat(generateSendTextExpr(action.expr));
+    }
   }
+  template.push("   Close Browser");
+  return template;
 }
 
-function evalAction(
-  action: Action,
-  temp: string[],
-  truthTable: Record<string, number>[][]
-) {
-  if (isClick(action)) {
-    temp.push("   Click Element   " + "${" + action.locator + "}");
-  } else if (isSendText(action)) {
-    const expr = action.expr;
-    evalExpr(expr, temp);
-    var valueOnly = generateResourcesExpr(expr, false);
-    valueOnly = parseLogicExpression(valueOnly);
-    var lines = ExprToComponent(valueOnly);
-
-    var refTable: Record<string, string> = {};
-    for (var line of lines) {
-      if (line.match(/(And\(\w+(\, \w+)*\))/gm) !== null) {
-        refTable[line.replace(/\(|\,|\ |\)/gm, "")] = line;
-        valueOnly = valueOnly.replace(line, line.replace(/\(|\,|\ |\)/gm, ""));
+function generateSendTextExpr(expr: Expr): string[] {
+  var header: string = "";
+  var tempExpr: string[] = [];
+  var dictValLoc: Record<string, string> = {};
+  var temp = exprToStringAndDict(expr, false, dictValLoc);
+  let refTable = TruthTable(temp);
+  if (typeof refTable === "string") {
+    console.error(refTable);
+  } else {
+    for (const key in refTable[0]) {
+      if (refTable[0].hasOwnProperty(key)) {
+        header += key + ", ";
       }
     }
-    var dicts = TruthTable(valueOnly, refTable);
-    if (typeof dicts == "object") {
-      truthTable.push(dicts);
-    } else {
-      throw new Error("Unrecognized Expr Truth Table");
+    header = "[" + header.slice(0, header.length - 2) + "]";
+    if (header.match(", ") == null) {
+      header = "";
     }
-  } else {
-    throw new Error(
-      "Unrecognized Action encountered: " + (action as any)?.$type ??
-        "Unknown Type"
-    );
+    for (const val in refTable[0]) {
+      if (refTable[0].hasOwnProperty(val)) {
+        if (header === "") {
+          tempExpr.push(
+            "   Input Text   ${" + dictValLoc[val] + "}   ${" + val + "}"
+          );
+        } else {
+          tempExpr.push(
+            "   Input Text   ${" +
+              dictValLoc[val] +
+              "}   ${" +
+              val +
+              "-" +
+              header +
+              "}"
+          );
+        }
+      }
+    }
   }
+  return tempExpr;
 }
 
-function evalExpr(e: Expr, temp: string[]): string {
-  if (isLit(e)) {
-    var line = "   Input Text   ${" + e.locator + "}   ${" + e.value + "}";
-    if (!temp.includes(line)) {
-      temp.push(line);
-    }
-    return "";
-  } else if (isLogicExpr(e)) {
-    let v1 = evalExpr(e.e1, temp);
-    let v2 = evalExpr(e.e2, temp);
-    return v1 + v2;
-  } else if (isGroup(e)) {
-    return evalExpr(e.ge, temp);
-  } else {
-    throw new Error(
-      "Unrecognized Expr encountered: " + (e as any)?.$type ?? "Unknown Type"
-    );
-  }
-}
-
-function generateResourcesExpr(e: Expr, isGe: boolean): string {
+function exprToStringAndDict(
+  e: Expr,
+  isGe: boolean,
+  dictValLoc: Record<string, string>
+): string {
   let temp = "";
   if (isLit(e)) {
+    for (const val in dictValLoc) {
+      if (val === e.value && dictValLoc[val] === e.locator) {
+        return e.value;
+      }
+    }
+    dictValLoc[e.value] = e.locator;
     return e.value;
   } else if (isLogicExpr(e)) {
-    let v1 = generateResourcesExpr(e.e1, false);
-    let v2 = generateResourcesExpr(e.e2, false);
+    let v1 = exprToStringAndDict(e.e1, false, dictValLoc);
+    let v2 = exprToStringAndDict(e.e2, false, dictValLoc);
 
     if (isGe) {
       temp += "( " + v1 + " " + e.op + " " + v2 + " )";
@@ -301,7 +319,7 @@ function generateResourcesExpr(e: Expr, isGe: boolean): string {
     }
     return temp;
   } else if (isGroup(e)) {
-    return generateResourcesExpr(e.ge, true);
+    return exprToStringAndDict(e.ge, true, dictValLoc);
   } else {
     throw new Error(
       "Unrecognized Expr encountered: " + (e as any)?.$type ?? "Unknown Type"
@@ -309,17 +327,25 @@ function generateResourcesExpr(e: Expr, isGe: boolean): string {
   }
 }
 
-function ExprToComponent(inputString: string): string[] {
-  let inputStrings = inputString.split("Or(");
-  if (inputStrings[1] !== undefined) {
-    var expr = inputStrings[1];
-    var singleStrings = expr.match(/(And\(\w+(\, \w+)\))|\w+/gm);
-    if (singleStrings !== null) {
-      return singleStrings;
+function exprToString(e: Expr, isGe: boolean): string {
+  let temp = "";
+  if (isLit(e)) {
+    return e.value;
+  } else if (isLogicExpr(e)) {
+    let v1 = exprToString(e.e1, false);
+    let v2 = exprToString(e.e2, false);
+
+    if (isGe) {
+      temp += "( " + v1 + " " + e.op + " " + v2 + " )";
     } else {
-      return [""];
+      temp += v1 + " " + e.op + " " + v2;
     }
+    return temp;
+  } else if (isGroup(e)) {
+    return exprToString(e.ge, true);
   } else {
-    return [inputStrings[0].trim()];
+    throw new Error(
+      "Unrecognized Expr encountered: " + (e as any)?.$type ?? "Unknown Type"
+    );
   }
 }
