@@ -1,7 +1,7 @@
 On https://demoqa.com/login:
     Valid:
-        Do: Test1
-            - SendText (u1 v1 | u2 v2) & u3 v3
-            - SendText u1 v1 | u3 v3
-            - SendText u5 v5
-            - Click login
+        Do: login
+            - SendText (username to UserName & password to PassWord)
+            - SendText username to UserName
+            - SendText password to PassWord
+            - Click login_button

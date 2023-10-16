@@ -48,9 +48,9 @@ function generateVariablesVal(vals: Val[]): void {
     if (isSingleVal(val)) {
       statements.push("@{" + val.name + "}" + "   " + val.value);
     } else if (isBundle(val)) {
-      var temp = "@{" + val.name + "}   ";
+      var temp = "@{" + val.name + "}";
       for (const value of val.values) {
-        temp += value + "   ";
+        temp += '   ' + value;
       }
       statements.push(temp);
     } else if (isTuple(val)) {

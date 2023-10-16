@@ -15,17 +15,37 @@ export function TruthTable(expr: string): string | Record<string, number>[] {
     if (pythonError) {
       console.error("Python script error:", pythonError);
     }
-    pythonOutput = pythonOutput.replace(/(\w+)/g, '"$1"');
 
-    let arrayOfDicts: Record<string, number>[];
-    try {
-      arrayOfDicts = JSON.parse(pythonOutput, (key, value) => {
-        const numericValue = parseFloat(value);
-        return isNaN(numericValue) ? value : numericValue;
-      });
-      return arrayOfDicts
-    } catch (error) {
-      return "Error parsing JSON:" + error;
+    var header : string[] = [];
+    var tbdict : Record<string, number>[] = [];
+
+    pythonOutput = pythonOutput.replace(/[\ ]+/gm, ' ');
+
+    var lines = pythonOutput.split("\n");
+
+    for (var i=0; i<lines.length; i++) {
+      if (i != 0) {
+        lines[i] = lines[i].trim();
+        if(lines[i].trim().slice(lines[i].length-1, lines[i].length) == '1') {
+          var values = lines[i].split(":")[0].trim().split(' ');
+          var tempRec : Record<string, number> = {};
+          for(var j = 0; j < values.length; j++ ) {
+            tempRec[header[j]] = Number(values[j]);
+          }
+          tbdict.push(tempRec);
+        }
+      } else {
+        header = lines[i].trim().split(' ');
+      }
+    }
+
+    if (tbdict.length > 0) {
+      return tbdict;
+    } else {
+      var tempRec : Record<string, number> = {};
+      tempRec[pythonOutput.trim()] = 1;
+      tbdict.push(tempRec)
+      return tbdict;
     }
   } else {
     console.error(`Python script exited with code ${pythonProcess.status}`);

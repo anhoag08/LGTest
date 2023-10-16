@@ -6,3 +6,11 @@ VALUE:
    And(uservalid, passvalid): (demouser, DemoPass@@123), (user1, Userdemo@1), (user2, Userdemo@2)
    uservalid: demouser
    passvalid: DemoPass@@123
+
+
+LOCATOR:
+   UserName: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[2]/div[2]/input
+   PassWord: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[3]/div[2]/input
+   login_button: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[4]/div[1]/button
+VALUE:
+   [password, username]: (demouser, DemoPass@@123), (user1, Userdemo@1), (user2, Userdemo@2)

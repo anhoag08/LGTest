@@ -171,6 +171,7 @@ function generateComboFromTemplate(
                     }
                   } else {
                     for(var i in valTemp) {
+                      console.log(key + '-' + header)
                       if(valTemp[i].includes(key + '-' + header)) {
                         valTemp[i] = valTemp[i].replace(key + '-' + header, 'EMPTY')
                       }
@@ -237,6 +238,13 @@ function generateComboFromTemplate(
     }
   }
   testCombo=[...actionTemp];
+  var testNum = 1;
+  for(var n = 0; n<testCombo.length; n++) {
+    if(!testCombo[n].includes('   ')) {
+      testCombo[n] += '-' + testNum;
+      testNum++;
+    }
+  }
   return testCombo;
 }
 

@@ -30,7 +30,7 @@ And infers Expr:
     Primary ({infer LogicExpr.e1=current} op='&' e2=Primary)*;
 
 Primary: Group | Lit;
-Lit: locator=MSTR value=MSTR;
+Lit: value=MSTR 'to' locator=MSTR;
 Group: '(' ge=Expr ')';
 
 fragment Block: body+=Action+;

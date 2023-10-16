@@ -1,14 +1,24 @@
 On https://demoqa.com/login:
     Valid:
-        Do: Test1
-            - SendText (u1 v1 | u2 v2) & (u3 v3 | u4 v4)
-            - SendText (u5 v5 & u6 v6)
-            - Click login
+        Do: login
+            - SendText (username to UserName | password to PassWord)
+            - Click login_button
 
-        Do: Test2
-            - SendText u5 v5 | u6 v6
-            - Click login
-
-        Do: Test3
-            - SendText u7 v7
-            - Click login
+On https://www.saucedemo.com/:
+	Valid:
+		Do: login
+			- SendText (username to UserName & password to PassWord)
+		    - Click login_button
+On https://thinking-tester-contact-list.herokuapp.com/addContact:
+    Valid:
+        Do: register
+            - SendText (first_name to First_Name & last_name to Last_Name)
+			- SendText date_birth to Date_of_Birth
+			- SendText email to Email 
+			- SendText phone to Phone 
+			- SendText street_address_1 to Street_Address_1
+			- SendText street_address_2 to Street_Address_2 & city to City
+            - SendText state_province to State_Province
+            - SendText postal_code to Postal_Code
+			- SendText country to Country
+			- Click submit_button

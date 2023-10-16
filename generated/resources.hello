@@ -1,24 +1,8 @@
 LOCATOR:
-   u1: xpath://*[@id="userName"]
-   u2: xpath://*[@id="userName"]
-   u3: xpath://*[@id="userName"]
-   u4: xpath://*[@id="userName"]
-   u7: xpath://*[@id="userName"]
-   login: xpath://*[@id="userName"]
-   u5: xpath://*[@id="userName"]
-   u6: xpath://*[@id="userName"]
+   UserName: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[2]/div[2]/input
+   PassWord: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[3]/div[2]/input
+   login_button: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[4]/div[1]/button
 VALUE:
-   [v1, v2, v3, v4]: (u1, u2, u3, u4)
-   [v1, v2, v3]: (v11, v21, v31)
-   [v1, v2, v4]: (v11, v21, v31)
-   [v1, v4]: (u11, u21)
-   [v1, v3, v4]: (v11, v21, v31)
-   [v1, v3]: (u11, u21)
-   [v2, v3, v4]: (v11, v21, v31)
-   [v2, v3]: (u11, u21)
-   [v2, v4]: (u11, u21)
-   v7: (u1, u2)
-   [v5, v6]: (u11, u21), (u11, u12)
-   [v1, v2]: (u11, u21), (u11, u12)
-   v5: (u1, u2, u3)
-   v6: (u1, u2, u3, u4)
+   [password, username]: (demouser, DemoPass@@123), (user1, Userdemo@1), (user2, Userdemo@2)
+   username: (demouser, user1)
+   password: (DemoPass@@123, Userdemo@1)
