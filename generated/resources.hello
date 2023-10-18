@@ -1,8 +1,6 @@
 LOCATOR:
-   UserName: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[2]/div[2]/input
-   PassWord: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[3]/div[2]/input
-   login_button: xpath://html/body/div[2]/div/div/div[2]/div[2]/div[2]/form/div[4]/div[1]/button
+   login_button: xpath=//button[@id='login' and @type='button' and normalize-space()='Login']
+   password_loc: xpath=//input[@placeholder='Password' and @type='password' and @id='password']
+   username_loc: xpath=//input[@placeholder='UserName' and @id='userName']
 VALUE:
-   [password, username]: (demouser, DemoPass@@123), (user1, Userdemo@1), (user2, Userdemo@2)
-   username: (demouser, user1)
-   password: (DemoPass@@123, Userdemo@1)
+   [password, username]: (DemoPass@@123, demouser), (Userdemo@1, user1), (Userdemo@2, user2)

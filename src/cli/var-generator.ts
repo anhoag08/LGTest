@@ -13,17 +13,16 @@ import {
 } from "../language/generated/ast";
 // import { extractDestinationAndName } from './cli-util';
 
-let statements = [""];
+let statements:string[] = [];
 
 export function generateCommandsVar(model: Model, filePath: string): string[] {
   genVariables(model.stmts);
-
   return statements;
 }
 
-function genVariables(statements: Object[]): void {
+function genVariables(Stmts: Object[]): void {
   // Iterate through the array of objects and format them as needed
-  for (const statement of statements) {
+  for (const statement of Stmts) {
     // Customize this part based on the structure of your statement objects
     if (isLocators(statement)) {
       generateVariablesLoc(statement.body);

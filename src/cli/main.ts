@@ -25,7 +25,7 @@ export const generateResources = async (fileName: string, opts: GenerateOptions)
     const services = createHelloWorldServices(NodeFileSystem).HelloWorld;
     const model = await extractAstNode<Model>(fileName, services);
     // now with 'generateCommands' instead
-    const generatedFilePath = generateCommandsRes(model, fileName, opts.destination);
+    const generatedFilePath = await generateCommandsRes(model, fileName, opts.destination);
     console.log(chalk.green(`Resources commands generated successfully: ${generatedFilePath}`));
 };
 

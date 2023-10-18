@@ -82,7 +82,7 @@ function generateStatements(stmts: Stmt[]): string[] {
   tempStmt = tempStmt.concat(TestHeader);
   for (const stmt of stmts) {
     if (isOn(stmt)) {
-      openBrowser = "   Open Browser   " + stmt.value + "   Edge";
+      openBrowser = "   Open Browser   " + stmt.value + "   Edge\n" + "   Maximize Browser Window";
     } else if (isValid(stmt)) {
       tempStmt = tempStmt.concat(generateTestCase(stmt.body, true));
     } else if (isInvalid(stmt)) {

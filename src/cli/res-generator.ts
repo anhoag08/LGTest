@@ -12,22 +12,24 @@ import {
   isValid,
   isInvalid,
   Do,
+  isOn,
 } from "../language/generated/ast";
 // import { Model, isDo, Action} from '../language/generated/ast';
 import { extractDestinationAndName } from "./cli-util";
 import { TruthTable } from "./pythonLogic/truth-table";
+import { locatorSearch } from "./javaComm/java-comm";
 
 // import { exec } from 'child_process';
 
 // Replace with the path to the JavaScript file you want to run
-let locators = ["LOCATOR:"];
+let locators:string[] = [];
 let values = ["VALUE:"];
 
-export function generateCommandsRes(
+export async function generateCommandsRes(
   model: Model,
   filePath: string,
   destination: string | undefined
-): string {
+): Promise<string> {
   const data = extractDestinationAndName(filePath, destination);
   const generatedFilePath = `${path.join(data.destination, "resources")}.hello`;
 
@@ -35,7 +37,7 @@ export function generateCommandsRes(
     fs.mkdirSync(data.destination, { recursive: true });
   }
 
-  generateResourcesStatement(model.stmts);
+  await generateResourcesStatement(model.stmts);
 
   // Convert the array of objects to a custom formatted string
   const formattedContent = formatResources(locators.concat(values));
@@ -57,7 +59,7 @@ function formatResources(statements: Object[]): string {
   return formattedContent;
 }
 
-function generateResourcesStatement(statements: Object[]): void {
+async function generateResourcesStatement(statements: Object[]): Promise<void> {
   // Iterate through the array of objects and format them as needed
   for (const statement of statements) {
     // Customize this part based on the structure of your statement objects
@@ -65,7 +67,21 @@ function generateResourcesStatement(statements: Object[]): void {
       generateResourcesDo(statement.body);
     } else if (isInvalid(statement)) {
       generateResourcesDo(statement.body);
+    } else if (isOn(statement)) {
+      locators.push(statement.value);
     }
+  }
+  try {
+    const result = await locatorSearch(locators);
+    // Handle the resolved data here
+    locators=result;
+    for(var n =0; n<locators.length; n++) {
+      locators[n] = '   ' + locators[n].trim()
+    }
+    locators = ['LOCATOR:'].concat(locators);
+  } catch (error) {
+    // Handle errors here
+    console.error('Error:', error);
   }
 }
 
@@ -80,7 +96,7 @@ function generateResourcesAction(actions: Action[]): void {
   for (const action of actions) {
     // Customize this part based on the structure of your statement objects
     if (isClick(action)) {
-      let temploc = "   " + action.locator + ":";
+      let temploc = action.locator;
       if (!locators.includes(temploc)) {
         locators.push(temploc);
       }
@@ -124,7 +140,7 @@ function generateResourcesValue(refTable: Record<string, number>[]) {
 function generateResourcesExpr(e: Expr, isGe: boolean): string {
   let temp = "";
   if (isLit(e)) {
-    let temploc = "   " + e.locator + ":";
+    let temploc =  e.locator;
     if (!locators.includes(temploc)) {
       locators.push(temploc);
     }

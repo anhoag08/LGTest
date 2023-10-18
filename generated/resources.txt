@@ -22,3 +22,16 @@ VALUE:
    [v1, v2]: (u11, u21), (u11, u12)
    v5: (u1, u2, u3)
    v6: (u1, u2, u3, u4)
+
+
+   VALUE:
+   [password, username]: (u11, u21)
+   username: (u1, u2, u3, u4)
+   password: (u1, u2, u3, u4)
+
+LOCATOR:
+   login_button: xpath=//button[@id='login' and @type='button' and normalize-space()='Login']
+   password_loc: xpath=//input[@placeholder='Password' and @type='password' and @id='password']
+   username_loc: xpath=//input[@placeholder='UserName' and @id='userName']
+VALUE:
+   [password, username]: (DemoPass@@123, demouser), (Userdemo@1, user1), (Userdemo@2, user2)

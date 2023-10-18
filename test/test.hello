@@ -1,7 +1,5 @@
 On https://demoqa.com/login:
     Valid:
         Do: login
-            - SendText (username to UserName & password to PassWord)
-            - SendText username to UserName
-            - SendText password to PassWord
+            - SendText (username to username_loc & password to password_loc)
             - Click login_button

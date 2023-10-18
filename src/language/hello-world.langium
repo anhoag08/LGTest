@@ -15,7 +15,7 @@ Action: SendText | Click;
 
 SendText: '-' 'SendText' expr=Expr;
 Click: '-' 'Click' locator=MSTR;
-Loc: name=MSTR ':'  value=URL;
+Loc: name=MSTR ':'  value=XPATH;
 Val: SingleVal | Bundle | Tuple;
 
 SingleVal: name=MSTR ':' value=MSTR;
@@ -40,7 +40,7 @@ fragment ValBlock: body+=Val+;
 // Terminals
 
 terminal URL:  /[\w]*:[\w\.\?\/\=\-\%\[\]\"\@\*]+/;
-// terminal MSLOC: /xpath:\/\/[\w\*\@\[\]\=\"]*/;
+terminal XPATH: /xpath=\/\/\w+\[[\w\@\=\'\ \-\(\)\.]+\]/;
 terminal MSTR: /[\w\_\@]+/;
 
 hidden terminal WS:             /\s+/;
